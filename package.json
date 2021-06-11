@@ -1,0 +1,15 @@
+{
+  "name": "bundler-to-pdf",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "pdfkit": "^0.12.1"
+  }
+}
