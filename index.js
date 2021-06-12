@@ -147,90 +147,89 @@ function setCompilationInformation(statsObject) {
     })
     .moveDown(2);
 
-    JSONstats.modules.forEach(mod => {
-        doc
-        .fontSize(11)
-    
-        .text(`Module Name: `, {
-          align: "left",
-        })
-        .font("Helvetica-Bold")
-        .text(`${mod.name}`, {
-            align: 'left'
-        })
-        .moveDown(0.5)
-
-        .text(`Module Type: `)
-        .font("Helvetica")
-        .text(`${mod.moduleType}`)
-        .moveDown(0.5)
-
-        .font("Helvetica-Bold")
-        .text(`Size: `)
-        .font("Helvetica")
-        .text(`${mod.size} KB`)
-        .moveDown(0.5)
-
-        .font("Helvetica-Bold")
-        .text(`Built: `)
-        .font("Helvetica")
-        .text(`${mod.built}`)
-        .moveDown(0.5)
-
-        .font("Helvetica-Bold")
-        .text(`Cached: `)
-        .font("Helvetica")
-        .text(`${mod.cached}`)
-        .moveDown(2);
-    });
-    // Assets
-
-    doc.fontSize(15);
+  JSONstats.modules.forEach((mod) => {
     doc
-      .font("Helvetica")
-      .text(`Assets Information`, {
-        width: 410,
+      .fontSize(11)
+
+      .text(`Module Name: `, {
         align: "left",
       })
+      .font("Helvetica-Bold")
+      .text(`${mod.name}`, {
+        align: "left",
+      })
+      .moveDown(0.5)
+
+      .text(`Module Type: `)
+      .font("Helvetica")
+      .text(`${mod.moduleType}`)
+      .moveDown(0.5)
+
+      .font("Helvetica-Bold")
+      .text(`Size: `)
+      .font("Helvetica")
+      .text(`${mod.size} KB`)
+      .moveDown(0.5)
+
+      .font("Helvetica-Bold")
+      .text(`Built: `)
+      .font("Helvetica")
+      .text(`${mod.built}`)
+      .moveDown(0.5)
+
+      .font("Helvetica-Bold")
+      .text(`Cached: `)
+      .font("Helvetica")
+      .text(`${mod.cached}`)
       .moveDown(2);
-      JSONstats.assets.forEach(asset => {
-        doc
-        .fontSize(11)
-    
-        .text(`Asset Name: `, {
-          align: "left",
-        })
-        .font("Helvetica-Bold")
-        .text(`${asset.name}`, {
-            align: 'left'
-        })
-        .moveDown(0.5)
+  });
+  // Assets
 
-        .text(`Asset Type: `)
-        .font("Helvetica")
-        .text(`${asset.type}`)
-        .moveDown(0.5)
+  doc.fontSize(15);
+  doc
+    .font("Helvetica")
+    .text(`Assets Information`, {
+      width: 410,
+      align: "left",
+    })
+    .moveDown(2);
+  JSONstats.assets.forEach((asset) => {
+    doc
+      .fontSize(11)
 
-        .font("Helvetica-Bold")
-        .text(`Size: `)
-        .font("Helvetica")
-        .text(`${asset.size} KB`)
-        .moveDown(0.5)
+      .text(`Asset Name: `, {
+        align: "left",
+      })
+      .font("Helvetica-Bold")
+      .text(`${asset.name}`, {
+        align: "left",
+      })
+      .moveDown(0.5)
 
-        .font("Helvetica-Bold")
-        .text(`Cached: `)
-        .font("Helvetica")
-        .text(`${asset.cached}`)
-        .moveDown(2);
-    });
-    console.log(JSONstats.assets)
+      .text(`Asset Type: `)
+      .font("Helvetica")
+      .text(`${asset.type}`)
+      .moveDown(0.5)
+
+      .font("Helvetica-Bold")
+      .text(`Size: `)
+      .font("Helvetica")
+      .text(`${asset.size} KB`)
+      .moveDown(0.5)
+
+      .font("Helvetica-Bold")
+      .text(`Cached: `)
+      .font("Helvetica")
+      .text(`${asset.cached}`)
+      .moveDown(2);
+  });
 }
 
 class PdfPulgin {
   constructor(options) {}
 
   apply(compiler) {
-    compiler.hooks.done.tapAsync("PDF-Plugin", async (stats) => {
+    compiler.hooks.done.tapAsync("PDF-Plugin", async (stats, cb) => {
       let statsObject = stats;
       statsObject.nowDate = new Date();
       const outputPath = path.resolve(process.cwd(), `${getFilenamePrefix()}`);
@@ -244,42 +243,342 @@ class PdfPulgin {
           if (!exists) {
             fs.writeFileSync(tmpName, JSON.stringify(statsObject.toJson()));
             setCompilationInformation(statsObject);
+            doc.pipe(fs.createWriteStream(outputPath));
             doc.end();
             return;
           }
-          // if exists
+          if (exists) {
+            // if exists
 
-          const oldStatsFile = fs.readFileSync(tmpName, "utf8");
-          // DIFF Here
+            const oldStatsFile = fs.readFileSync(tmpName, "utf8");
+            const oldStatsJSON = JSON.parse(oldStatsFile);
+            const newStatsFile = stats.toJson();
+
+            fs.writeFileSync(tmpName, JSON.stringify(statsObject.toJson()));
+
+            let removedModules = [];
+            let addedModules = [];
+            let k1 = {};
+            let k2 = {};
+            // Old build
+            const oldModules = oldStatsJSON.modules.map((mod) => {
+              return {
+                type: mod.type,
+                size: mod.size,
+                name: mod.name,
+              };
+            });
+
+            const newModules = newStatsFile.modules.map((mod) => {
+              return {
+                type: mod.type,
+                size: mod.size,
+                name: mod.name,
+              };
+            });
+
+            oldModules.forEach((mod) => {
+              k1[mod.name] = mod;
+            });
+
+            newModules.forEach((mod) => {
+              k2[mod.name] = mod;
+            });
+
+            oldModules.forEach((mod) => {
+              const mod_two = k2[mod.name];
+              if (!mod_two) {
+                removedModules.push(mod);
+              } else {
+                if (mod_two.name !== mod.name) {
+                  // updated
+                }
+              }
+            });
+
+            newModules.forEach((mod) => {
+              if (!oldModules[mod.name]) {
+                addedModules.push(mod);
+              }
+            });
+
+            doc.fontSize(15);
+            doc
+              .font("Helvetica")
+              .text(`Current Modules`, {
+                width: 410,
+                align: "left",
+              })
+              .moveDown(2);
+            newModules.forEach((mod) => {
+              doc
+                .fontSize(11)
+
+                .text(`Module Name: `, {
+                  align: "left",
+                })
+                .font("Helvetica-Bold")
+                .text(`${mod.name}`, {
+                  align: "left",
+                })
+                .moveDown(0.5)
+
+                .text(`Asset Type: `)
+                .font("Helvetica")
+                .text(`${mod.type}`)
+                .moveDown(0.5)
+
+                .font("Helvetica-Bold")
+                .text(`Size: `)
+                .font("Helvetica")
+                .text(`${mod.size} KB`)
+                .moveDown(0.5);
+            });
+
+            doc.fontSize(15);
+            doc
+              .font("Helvetica")
+              .text(`Added Modules`, {
+                width: 410,
+                align: "left",
+              })
+              .moveDown(2);
+            addedModules.forEach((mod) => {
+              doc
+                .fontSize(11)
+
+                .text(`Module Name: `, {
+                  align: "left",
+                })
+                .font("Helvetica-Bold")
+                .text(`${mod.name}`, {
+                  align: "left",
+                })
+                .moveDown(0.5)
+
+                .text(`Asset Type: `)
+                .font("Helvetica")
+                .text(`${mod.type}`)
+                .moveDown(0.5)
+
+                .font("Helvetica-Bold")
+                .text(`Size: `)
+                .font("Helvetica")
+                .text(`${mod.size} KB`)
+                .moveDown(0.5);
+            });
+
+            doc.fontSize(15);
+            doc
+              .font("Helvetica")
+              .text(`Removed Modules`, {
+                width: 410,
+                align: "left",
+              })
+              .moveDown(2);
+            removedModules.forEach((mod) => {
+              doc
+                .fontSize(11)
+
+                .text(`Module Name: `, {
+                  align: "left",
+                })
+                .font("Helvetica-Bold")
+                .text(`${mod.name}`, {
+                  align: "left",
+                })
+                .moveDown(0.5)
+
+                .text(`Asset Type: `)
+                .font("Helvetica")
+                .text(`${mod.type}`)
+                .moveDown(0.5)
+
+                .font("Helvetica-Bold")
+                .text(`Size: `)
+                .font("Helvetica")
+                .text(`${mod.size} KB`)
+                .moveDown(0.5);
+            });
+            // DIFF Here
+          }
         });
-        return;
-      }
-
-      const statsFileExists = await exists(tmpName);
-      // if stats.json file doesnt exists
-      if (!statsFileExists) {
-        // write stats file to tmp folder
-        fs.writeFileSync(tmpName, JSON.stringify(statsObject.toJson()));
-
-        setCompilationInformation(statsObject);
-
         doc.pipe(fs.createWriteStream(outputPath));
-        console.log("Generated PDF at: ", outputPath);
         doc.end();
-        return;
       }
-      // if exists
-      // DIFF
-      
-      const oldStatsFile = fs.readFileSync(tmpName, "utf8");
+      if (tmpDirExists) {
+        const statsFileExists = await exists(tmpName);
+        // if stats.json file doesnt exists
+        if (!statsFileExists) {
+          // write stats file to tmp folder
+          fs.writeFileSync(tmpName, JSON.stringify(statsObject.toJson()));
+
+          setCompilationInformation(statsObject);
+
+          doc.pipe(fs.createWriteStream(outputPath));
+          console.log("Generated PDF at: ", outputPath);
+          doc.end();
+        }
+        if (statsFileExists) {
+          // if exists
+          // DIFF
+          const oldStatsFile = fs.readFileSync(tmpName, "utf8");
+          const oldStatsJSON = JSON.parse(oldStatsFile);
+          const newStatsFile = stats.toJson();
+
+          fs.writeFileSync(tmpName, JSON.stringify(statsObject.toJson()));
+
+          let removedModules = [];
+          let addedModules = [];
+          let k1 = {};
+          let k2 = {};
+          // Old build
+          const oldModules = oldStatsJSON.modules.map((mod) => {
+            return {
+              type: mod.type,
+              size: mod.size,
+              name: mod.name,
+            };
+          });
+
+          const newModules = newStatsFile.modules.map((mod) => {
+            return {
+              type: mod.type,
+              size: mod.size,
+              name: mod.name,
+            };
+          });
+
+          oldModules.forEach((mod) => {
+            k1[mod.name] = mod;
+          });
+
+          newModules.forEach((mod) => {
+            k2[mod.name] = mod;
+          });
+
+          oldModules.forEach((mod) => {
+            const mod_two = k2[mod.name];
+            if (!mod_two) {
+              removedModules.push(mod);
+            } else {
+              if (mod_two.name !== mod.name) {
+                // updated
+              }
+            }
+          });
+
+          newModules.forEach((mod) => {
+            if (!oldModules[mod.name]) {
+              addedModules.push(mod);
+            }
+          });
+          setCompilationInformation(statsObject);
+          doc.fontSize(15);
+          doc
+            .font("Helvetica")
+            .text(`Current Modules`, {
+              width: 410,
+              align: "left",
+            })
+            .moveDown(2);
+          newModules.forEach((mod) => {
+            doc
+              .fontSize(11)
+
+              .text(`Module Name: `, {
+                align: "left",
+              })
+              .font("Helvetica-Bold")
+              .text(`${mod.name}`, {
+                align: "left",
+              })
+              .moveDown(0.5)
+
+              .text(`Asset Type: `)
+              .font("Helvetica")
+              .text(`${mod.type}`)
+              .moveDown(0.5)
+
+              .font("Helvetica-Bold")
+              .text(`Size: `)
+              .font("Helvetica")
+              .text(`${mod.size} KB`)
+              .moveDown(0.5);
+          });
+
+          doc.fontSize(15);
+          doc
+            .font("Helvetica")
+            .text(`Added Modules`, {
+              width: 410,
+              align: "left",
+            })
+            .moveDown(2);
+          addedModules.forEach((mod) => {
+            doc
+              .fontSize(11)
+
+              .text(`Module Name: `, {
+                align: "left",
+              })
+              .font("Helvetica-Bold")
+              .text(`${mod.name}`, {
+                align: "left",
+              })
+              .moveDown(0.5)
+
+              .text(`Asset Type: `)
+              .font("Helvetica")
+              .text(`${mod.type}`)
+              .moveDown(0.5)
+
+              .font("Helvetica-Bold")
+              .text(`Size: `)
+              .font("Helvetica")
+              .text(`${mod.size} KB`)
+              .moveDown(0.5);
+          });
+
+          doc.fontSize(15);
+          doc
+            .font("Helvetica")
+            .text(`Removed Modules`, {
+              width: 410,
+              align: "left",
+            })
+            .moveDown(2);
+          removedModules.forEach((mod) => {
+            doc
+              .fontSize(11)
+
+              .text(`Module Name: `, {
+                align: "left",
+              })
+              .font("Helvetica-Bold")
+              .text(`${mod.name}`, {
+                align: "left",
+              })
+              .moveDown(0.5)
+
+              .text(`Asset Type: `)
+              .font("Helvetica")
+              .text(`${mod.type}`)
+              .moveDown(0.5)
+
+              .font("Helvetica-Bold")
+              .text(`Size: `)
+              .font("Helvetica")
+              .text(`${mod.size} KB`)
+              .moveDown(0.5);
+          });
+          doc.pipe(fs.createWriteStream(outputPath));
+          doc.end();
+        }
+      }
+      cb();
     });
   }
 }
 
 module.exports = PdfPulgin;
-
-// TODO:
-
-// 1. Store json files in a data structure
-// 2. compare two stats files
-// 3. output to PDF
