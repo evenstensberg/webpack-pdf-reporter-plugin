@@ -20,6 +20,8 @@ module.exports = {
 }
 ```
 
+Running webpack twice with this plugin will report diff between builds.
+
 # Example
 
 See generated PDF [here](./example.pdf).
