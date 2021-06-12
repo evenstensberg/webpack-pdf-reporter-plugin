@@ -1,7 +1,7 @@
 {
   "name": "webpack-pdf-reporter-plugin",
   "version": "1.0.0",
-  "description": "",
+  "description": "PDF reporter to webpack",
   "main": "index.js",
   "scripts": {
     "test": "node index.js"
