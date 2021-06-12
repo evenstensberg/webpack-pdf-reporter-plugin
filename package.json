@@ -1,5 +1,5 @@
 {
-  "name": "bundler-to-pdf",
+  "name": "webpack-pdf-reporter-plugin",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",

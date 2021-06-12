@@ -225,7 +225,7 @@ function setCompilationInformation(statsObject) {
   });
 }
 
-class PdfPulgin {
+class PdfReporterPlugin {
   constructor(options) {}
 
   apply(compiler) {
@@ -581,4 +581,4 @@ class PdfPulgin {
   }
 }
 
-module.exports = PdfPulgin;
+module.exports = PdfReporterPlugin;
