@@ -6,8 +6,8 @@
   "scripts": {
     "test": "node index.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["pdf", "reporter", "webpack"],
+  "author": "Even Stensberg<evenstensberg@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "pdfkit": "^0.12.1"
